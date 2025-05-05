@@ -51,6 +51,6 @@ vpc_has_required_tags = func(vpc) {
 #	#deny_resources_without_mandatory_tags
 #}
 main = rule {
-  length(vpc_missing_tags) is 0
+  length(vpcs_missing_tags) is 0
 }
 
