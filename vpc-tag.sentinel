@@ -19,17 +19,21 @@ mandatory_tags = ["Name", "Environment"]
 vpcs = filter tfplan.resource_changes as _, resource {
 	resource.type is "aws_vpc" and (
 	   resource.change.actions contains "create" or 
-           resource.change.actions contains "update"
-        )
+           resource.change.actions contains "update")
      }
+print("Found VPC resources:", vpcs)
 
 # Function to check if all required tags are present and non-empty
 vpc_has_required_tags = func(vpc) {
    tags = vpc.change.after.tags
-   all mandatory_tags as tag {
+   print("Checking tags for VPC:", vpc.address, "->", tags)
+
+   result = all mandatory_tags as tag {
       tag in tags and tags[tag] != ""
       }
-   }
+   print("Result for", vpc.address, ":", result)
+   return result   
+}
 
 # Find all VPCs missing required tags
 
@@ -53,4 +57,5 @@ vpc_has_required_tags = func(vpc) {
 main = rule {
   length(vpcs_missing_tags) is 0
 }
+
 
