@@ -1,8 +1,16 @@
 # Enforcing Mandatory Tags for
 # aws vpc instances
+# This policy uses the Sentinel tfplan/v2 import to require that
+# specified AWS resources have all mandatory tags
 
-# This Policy uses tfplan/v2 as the data source
-import "tfplan/v2" as tfplan
+# Import common-functions/tfplan-functions/tfplan-functions.sentinel
+# with alias "plan"
+import "tfplan-functions" as plan
+
+# Import aws-functions/aws-functions.sentinel
+# with alias "aws"
+import "aws-functions" as aws
+
 
 # The list of mandatory tags
 mandatory_tags = ["Name", "Environment"]
