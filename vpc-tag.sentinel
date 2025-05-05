@@ -18,10 +18,10 @@ mandatory_tags = ["Name", "Environment"]
 # Filtering all of 'aws_instance' resources from the plan file
 vpcs = filter tfplan.resource_changes as _, resource {
 	resource.type is "aws_vpc" and (
-		resource.change.actions containes "create" or 
-    resource.change.actions containes "update"
-    )
-  }
+	   resource.change.actions contains "create" or 
+           resource.change.actions contains "update"
+        )
+     }
 
 # Function to check if all required tags are present and non-empty
 vpc_has_required_tags = func(vpc) {
