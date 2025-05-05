@@ -1,5 +1,3 @@
-# Enforcing Mandatory Tags for
-# aws vpc instances
 # This policy uses the Sentinel tfplan/v2 import to require that
 # specified AWS resources have all mandatory tags
 
@@ -11,51 +9,30 @@ import "tfplan-functions" as plan
 # with alias "aws"
 import "aws-functions" as aws
 
+# List of resources that are required to have name/value tags
+param resource_types default [
+  "aws_s3_bucket",
+  "aws_instance",
+  "aws_vpc",
+]
 
-# The list of mandatory tags
-mandatory_tags = ["Name", "Environment"]
+# List of mandatory tags
+# Note that the tags here are for internal HashiCorp usage
+# You should assign your own tags in a "mandatory_tags" parameter in your policy set
+# Or change the tags here in the policy.
+param mandatory_tags default ["Name", "ttl", "owner", "region", "purpose"]
 
-# Filtering all of 'aws_instance' resources from the plan file
-vpcs = filter tfplan.resource_changes as _, resource {
-	resource.type is "aws_vpc" and (
-	   resource.change.actions contains "create" or 
-           resource.change.actions contains "update")
-     }
-print("Found VPC resources:", vpcs)
+# Get all AWS Resources with standard tags
+allAWSResourcesWithStandardTags =
+                          aws.find_resources_with_standard_tags(resource_types)
 
-# Function to check if all required tags are present and non-empty
-vpc_has_required_tags = func(vpc) {
-   tags = vpc.change.after.tags
-   print("Checking tags for VPC:", vpc.address, "->", tags)
+# Filter to AWS resources with violations
+# Warnings will be printed for all violations since the last parameter is true
+violatingAWSResources =
+        plan.filter_attribute_not_contains_list(allAWSResourcesWithStandardTags,
+                        "tags", mandatory_tags, true)
 
-   result = all mandatory_tags as tag {
-      tag in tags and tags[tag] != ""
-      }
-   print("Result for", vpc.address, ":", result)
-   return result   
-}
-
-# Find all VPCs missing required tags
-
-  vpcs_missing_tags = filter vpcs as vpc {
-      not vpc_has_required_tags(vpc)
-  }
-
-# Enforcing Mandatory Tags
-#deny_resources_without_mandatory_tags = rule {
-#	all vpc_instances as _, instances {
-#		any instances.change.after.tags as key, value {
-#			key in mandatory_tags
-#		}
-#	}
-#}
-
-# Main Policy
-#main = rule {
-#	#deny_resources_without_mandatory_tags
-#}
+# Main rule
 main = rule {
-  length(vpcs_missing_tags) is 0
+  length(violatingAWSResources["messages"]) is 0
 }
-
-
